@@ -20,6 +20,8 @@ type ResponseWriter interface {
 	Written() bool
 	// Size returns the size of the response body.
 	Size() int
+	// Body returns the response body.
+	Body() []byte
 	// Before allows for a function to be called before the ResponseWriter has been written to. This is
 	// useful for setting headers or any other operations that must happen before a response has been written.
 	Before(func(ResponseWriter))
@@ -44,6 +46,7 @@ type responseWriter struct {
 	http.ResponseWriter
 	status      int
 	size        int
+	body        []byte
 	beforeFuncs []beforeFunc
 }
 
@@ -58,6 +61,7 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 		// The status will be StatusOK if WriteHeader has not been called yet
 		rw.WriteHeader(http.StatusOK)
 	}
+	rw.body = b
 	size, err := rw.ResponseWriter.Write(b)
 	rw.size += size
 	return size, err
@@ -69,6 +73,10 @@ func (rw *responseWriter) Status() int {
 
 func (rw *responseWriter) Size() int {
 	return rw.size
+}
+
+func (rw *responseWriter) Body() []byte {
+	return rw.body
 }
 
 func (rw *responseWriter) Written() bool {
